@@ -1,12 +1,23 @@
-from django.shortcuts import HttpResponse
+from django.shortcuts import HttpResponse, render
 from django.urls import re_path
 
 
 class Handler:
+    display_list = []
+
     def __init__(self, model_class, prev=None):
         self.model_class = model_class
         self.app_label, self.model_name = self.model_class._meta.app_label, self.model_class._meta.model_name
         self.prev = prev
+
+    def get_display_list(self):
+        """
+        获取页面上应该显示的列，预留的自定义扩展，例如：以后根据用户的不同显示不同的列
+        :return:
+        """
+        value = []
+        value.extend(self.display_list)
+        return value
 
     def list_view(self, request):
         """
@@ -14,7 +25,21 @@ class Handler:
         :param request:
         :return:
         """
-        return HttpResponse('列表页面')
+        display_list = self.get_display_list()
+        # 获取表头
+        table_header_list = []
+        table_body_list = []
+        # 获取表中实际数据
+        table_body_data = self.model_class.objects.all()
+        if display_list:
+            for field in display_list:
+                table_header_list.append(self.model_class._meta.get_field(field).verbose_name)
+            table_body_data = table_body_data.values_list(*self.display_list)
+        else:
+            for row in table_body_data:
+                table_body_list.append([row])
+            table_header_list.append(self.model_name)
+        return render(request, "list.html", locals())
 
     def add_view(self, request):
         pass
@@ -53,19 +78,32 @@ class Handler:
     @property
     def urls(self):
         url_patterns = list()
-        url_patterns.append(
-            re_path(r'%s/list/$' % self.prev, self.list_view,
-                    name=self.add_url_name)),
-        url_patterns.append(re_path(r'%s/add/$' % self.prev, self.add_view,
-                                    name=self.add_url_name)),
-        url_patterns.append(
-            re_path(r'%s/edit/(\d+)$' % self.prev, self.edit_view,
-                    name=self.add_url_name)),
-        url_patterns.append(
-            re_path(r'%s/del/(\d+)$' % self.prev, self.del_view,
-                    name=self.add_url_name)),
-        url_patterns.extend(self.extra_url)
-
+        if self.prev:
+            url_patterns.append(
+                re_path(r'%s/list/$' % self.prev, self.list_view,
+                        name=self.add_url_name)),
+            url_patterns.append(re_path(r'%s/add/$' % self.prev, self.add_view,
+                                        name=self.add_url_name)),
+            url_patterns.append(
+                re_path(r'%s/edit/(\d+)$' % self.prev, self.edit_view,
+                        name=self.add_url_name)),
+            url_patterns.append(
+                re_path(r'%s/del/(\d+)$' % self.prev, self.del_view,
+                        name=self.add_url_name)),
+            url_patterns.extend(self.extra_url)
+        else:
+            url_patterns.append(
+                re_path(r'list/$', self.list_view,
+                        name=self.add_url_name)),
+            url_patterns.append(re_path(r'add/$', self.add_view,
+                                        name=self.add_url_name)),
+            url_patterns.append(
+                re_path(r'edit/(\d+)$', self.edit_view,
+                        name=self.add_url_name)),
+            url_patterns.append(
+                re_path(r'del/(\d+)$', self.del_view,
+                        name=self.add_url_name)),
+            url_patterns.extend(self.extra_url)
         return url_patterns, None, None
 
     @property

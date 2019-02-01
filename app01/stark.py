@@ -7,6 +7,8 @@ from stark.handler import Handler
 
 
 class UserInfoHandler(Handler):
+    display_list = ['name', 'age', 'email']
+
     @property
     def urls(self):
         if self.prev:
