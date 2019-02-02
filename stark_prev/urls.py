@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from stark.services.v1 import site
 
-print(site._registry)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     # re_path('^web/', include("app01.urls"))

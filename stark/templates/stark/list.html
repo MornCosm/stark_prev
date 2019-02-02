@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="luffy-container">
+        {% if add_btn %}
+            <div style="margin: 5px 0;">
+                {{ add_btn|safe }}
+            </div>
+        {% endif %}
+
+        <table class="table table-bordered">
+            <thead>
+            {% for item in table_header_list %}
+                <th>{{ item }}</th>
+            {% endfor %}
+            </thead>
+            <tbody>
+            {% for row in table_body_list %}
+                <tr>
+                    {% for field in row %}
+                        <td>
+                            {{ field }}
+                        </td>
+                    {% endfor %}
+
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <nav>
+            <ul class="pagination">
+                {{ pager.page_html|safe }}
+            </ul>
+        </nav>
+    </div>
+{% endblock %}

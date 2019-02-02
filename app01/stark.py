@@ -7,25 +7,30 @@ from stark.handler import Handler
 
 
 class UserInfoHandler(Handler):
-    display_list = ['name', 'age', 'email']
+    display_list = ['name', 'age', 'email', Handler.edit_display, Handler.del_display]
 
     @property
     def urls(self):
         if self.prev:
             url_patterns = [
-                re_path(r'^%s/list/$' % self.prev, self.list_view),
-                re_path(r'^%s/add/$' % self.prev, self.add_view)
+                re_path(r'^%s/list/$' % self.prev, self.list_view, name=self.list_url_name),
+                re_path(r'^%s/add/$' % self.prev, self.add_view, name=self.add_url_name),
+                re_path(r'^%s/edit/(\d+)' % self.prev, self.edit_view, name=self.edit_url_name),
+                re_path(r'^%s/del/(\d+)' % self.prev, self.del_view, name=self.del_url_name)
             ]
         else:
             url_patterns = [
-                re_path(r'^list/$', self.list_view),
-                re_path(r'^add/$', self.add_view)
+                re_path(r'^list/$', self.list_view, name=self.list_url_name),
+                re_path(r'^add/$', self.add_view, name=self.add_url_name),
+                re_path(r'^edit/(\d+)$', self.edit_view, name=self.edit_url_name),
+                re_path(r'^del/(\d+)$', self.del_view, name=self.del_url_name),
             ]
 
         return url_patterns, None, None
 
 
 class DepartmentHandler(Handler):
+    display_list = ['id', 'title', Handler.edit_display, Handler.del_display]
     @property
     def extra_url(self):
         if self.prev:
@@ -40,9 +45,6 @@ class DepartmentHandler(Handler):
         return url_patterns
 
     def detail_view(self, pk, *args, **kwargs):
-        print(pk)
-        print(*args)
-        print(**kwargs)
         return HttpResponse('详情页')
 
 

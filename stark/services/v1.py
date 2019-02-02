@@ -20,7 +20,7 @@ class StarkSite:
 
         self._registry.append({
             "model_class": model_class,
-            "handler": handle_class(model_class, prev),
+            "handler": handle_class(self, model_class, prev),
         })
 
     def get_urls(self):
