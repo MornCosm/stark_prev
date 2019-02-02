@@ -1,6 +1,9 @@
+import functools
 from types import FunctionType
 
-from django.shortcuts import render, reverse
+from django import forms
+from django.http import QueryDict
+from django.shortcuts import render, reverse, redirect
 from django.urls import re_path
 from django.utils.safestring import mark_safe
 
@@ -28,6 +31,7 @@ class Handler:
     display_list = []
     per_page = 1
     has_add_btn = True
+    model_form_class = None
 
     def __init__(self, site, model_class, prev=None):
         self.site = site
@@ -45,13 +49,13 @@ class Handler:
         if is_header:
             return "编辑"
         name = "%s:%s" % (self.site.namespace, self.edit_url_name,)
-        return mark_safe('<a href="%s">编辑</a>' % reverse(name, args=(obj.pk, )))
+        return mark_safe('<a href="%s">编辑</a>' % reverse(name, args=(obj.pk,)))
 
     def del_display(self, obj=None, is_header=None):
         if is_header:
             return "删除"
         name = "%s:%s" % (self.site.namespace, self.del_url_name,)
-        return mark_safe('<a href="%s">删除</a>' % reverse(name, args=(obj.pk, )))
+        return mark_safe('<a href="%s">删除</a>' % reverse(name, args=(obj.pk,)))
 
     def get_display_list(self):
         """
@@ -65,7 +69,23 @@ class Handler:
     def reverse_add_url(self):
         name = "%s:%s" % (self.site.namespace, self.add_url_name)
         base_url = reverse(name)
+        if self.request.GET:
+            param = self.request.GET.urlencode()
+            new_query_dict = QueryDict()
+            new_query_dict._mutable=True
+            new_query_dict["_filter"] = param
+            add_url = "%s?%s" % (base_url, new_query_dict.urlencode())
+        else:
+            add_url = base_url
+        return add_url
 
+    def reverse_list_url(self):
+        name = "%s:%s" % (self.site.namespace, self.list_url_name,)
+        base_url = reverse(name)
+        param = self.request.GET.get('_filter')
+        if not param:
+            return base_url
+        return "%s?%s" % (base_url, param,)
 
     def get_add_btn(self):
         if self.has_add_btn:
@@ -110,18 +130,48 @@ class Handler:
         for row in table_body_data:
             fields_list = []
             if display_list:
-               for key_or_func in display_list:
-                   if isinstance(key_or_func, FunctionType):
-                       fields_list.append(key_or_func(self, row, False))
-                   else:
-                       fields_list.append(getattr(row, key_or_func))
+                for key_or_func in display_list:
+                    if isinstance(key_or_func, FunctionType):
+                        fields_list.append(key_or_func(self, row, False))
+                    else:
+                        fields_list.append(getattr(row, key_or_func))
             else:
                 fields_list.append(row)
             table_body_list.append(fields_list)
+        add_btn = None
+        if self.has_add_btn:
+            add_btn = self.get_add_btn()
         return render(request, "stark/list.html", locals())
 
+    def get_model_form_class(self):
+        if self.model_form_class:
+            return self.model_form_class
+
+        class StarkModelForm(forms.ModelForm):
+            def __init__(self, *args, **kwargs):
+                super(StarkModelForm, self).__init__(*args, **kwargs)
+                for name, field in self.fields.items():
+                    field.widget.attrs["class"] = "form-control"
+
+            class Meta:
+                model=self.model_class
+                fields="__all__"
+
+        return StarkModelForm
+
+    def save(self, form, is_update=False):
+        form.save()
+
     def add_view(self, request):
-        pass
+        model_form_class = self.get_model_form_class()
+        if request.method == "GET":
+            form = model_form_class()
+            return render(request, 'stark/change.html', locals())
+        form = model_form_class(request.POST)
+        if form.is_valid():
+            self.save(form)
+            return redirect(to=self.reverse_list_url())
+        return render(request, 'stark/change.html', locals())
 
     def edit_view(self, request, pk):
         pass
@@ -158,28 +208,28 @@ class Handler:
         url_patterns = list()
         if self.prev:
             url_patterns.append(
-                re_path(r'%s/list/$' % self.prev, self.list_view,
+                re_path(r'%s/list/$' % self.prev, self.wrapper(self.list_view),
                         name=self.list_url_name)),
-            url_patterns.append(re_path(r'%s/add/$' % self.prev, self.add_view,
+            url_patterns.append(re_path(r'%s/add/$' % self.prev, self.wrapper(self.add_view),
                                         name=self.add_url_name)),
             url_patterns.append(
-                re_path(r'%s/edit/(\d+)$' % self.prev, self.edit_view,
+                re_path(r'%s/edit/(\d+)$' % self.prev, self.wrapper(self.edit_view),
                         name=self.edit_url_name)),
             url_patterns.append(
-                re_path(r'%s/del/(\d+)$' % self.prev, self.del_view,
+                re_path(r'%s/del/(\d+)$' % self.prev, self.wrapper(self.del_view),
                         name=self.del_url_name)),
             url_patterns.extend(self.extra_url)
         else:
             url_patterns.append(
-                re_path(r'list/$', self.list_view,
+                re_path(r'list/$', self.wrapper(self.list_view),
                         name=self.list_url_name)),
-            url_patterns.append(re_path(r'add/$', self.add_view,
+            url_patterns.append(re_path(r'add/$', self.wrapper(self.add_view),
                                         name=self.add_url_name)),
             url_patterns.append(
-                re_path(r'edit/(\d+)$', self.edit_view,
+                re_path(r'edit/(\d+)$', self.wrapper(self.edit_view),
                         name=self.edit_url_name)),
             url_patterns.append(
-                re_path(r'del/(\d+)$', self.del_view,
+                re_path(r'del/(\d+)$', self.wrapper(self.del_view),
                         name=self.del_url_name)),
             url_patterns.extend(self.extra_url)
         return url_patterns, None, None
@@ -189,5 +239,9 @@ class Handler:
         return []
 
     def wrapper(self, func):
-        pass
+        @functools.wraps(func)
+        def inner(request, *args, **kwargs):
+            self.request = request
+            return func(request, *args, **kwargs)
 
+        return inner

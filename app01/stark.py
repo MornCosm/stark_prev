@@ -13,17 +13,17 @@ class UserInfoHandler(Handler):
     def urls(self):
         if self.prev:
             url_patterns = [
-                re_path(r'^%s/list/$' % self.prev, self.list_view, name=self.list_url_name),
-                re_path(r'^%s/add/$' % self.prev, self.add_view, name=self.add_url_name),
-                re_path(r'^%s/edit/(\d+)' % self.prev, self.edit_view, name=self.edit_url_name),
-                re_path(r'^%s/del/(\d+)' % self.prev, self.del_view, name=self.del_url_name)
+                re_path(r'^%s/list/$' % self.prev, self.wrapper(self.list_view), name=self.list_url_name),
+                re_path(r'^%s/add/$' % self.prev, self.wrapper(self.add_view), name=self.add_url_name),
+                re_path(r'^%s/edit/(\d+)' % self.prev, self.wrapper(self.edit_view), name=self.edit_url_name),
+                re_path(r'^%s/del/(\d+)' % self.prev, self.wrapper(self.del_view), name=self.del_url_name)
             ]
         else:
             url_patterns = [
-                re_path(r'^list/$', self.list_view, name=self.list_url_name),
-                re_path(r'^add/$', self.add_view, name=self.add_url_name),
-                re_path(r'^edit/(\d+)$', self.edit_view, name=self.edit_url_name),
-                re_path(r'^del/(\d+)$', self.del_view, name=self.del_url_name),
+                re_path(r'^list/$', self.wrapper(self.list_view), name=self.list_url_name),
+                re_path(r'^add/$', self.wrapper(self.add_view), name=self.add_url_name),
+                re_path(r'^edit/(\d+)$', self.wrapper(self.edit_view), name=self.edit_url_name),
+                re_path(r'^del/(\d+)$', self.wrapper(self.del_view), name=self.del_url_name),
             ]
 
         return url_patterns, None, None
@@ -35,12 +35,12 @@ class DepartmentHandler(Handler):
     def extra_url(self):
         if self.prev:
             url_patterns = list([
-                re_path(r'%s/detail/(\d+)$' % self.prev, self.detail_view,
+                re_path(r'%s/detail/(\d+)$' % self.prev, self.wrapper(self.detail_view),
                         name='%s_%s_%s_detail' % (self.app_label, self.model_name, self.prev))
             ])
         else:
             url_patterns = list([
-                re_path(r'detail/(\d+)$', self.detail_view, name='%s_%s_detail' % (self.app_label, self.model_name))
+                re_path(r'detail/(\d+)$', self.wrapper(self.detail_view), name='%s_%s_detail' % (self.app_label, self.model_name))
             ])
         return url_patterns
 

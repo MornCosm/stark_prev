@@ -6,6 +6,11 @@
 </head>
 <body>
 <h1>数据列表</h1>
+{% if add_btn %}
+    <div style="margin: 5px 0;">
+        {{ add_btn|safe }}
+    </div>
+{% endif %}
 <table border="1">
     <tr>
         {% for item in table_header_list %}
