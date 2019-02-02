@@ -189,4 +189,5 @@ class Handler:
         return []
 
     def wrapper(self, func):
-        @functools
+        pass
+
