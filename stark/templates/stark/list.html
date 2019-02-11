@@ -2,31 +2,78 @@
 
 {% block content %}
     <div class="luffy-container">
-        {% if add_btn %}
-            <div style="margin: 5px 0;">
-                {{ add_btn|safe }}
+        {% if search_group_rows %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-filter" aria-hidden="true"> 快速筛选</i>
+                </div>
+                <div class="panel-body">
+                    <div class="search-group">
+                        {% for row in search_group_rows %}
+                            <div class="row">
+                                {% for item in row %}
+                                    {{ item|safe }}
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if search_list %}
+            <div style="float: right">
+                <form method="get" class="form-inline">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="query" value="{{ search_value }}"
+                               placeholder="关键字搜索">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
         {% endif %}
 
-        <table class="table table-bordered">
-            <thead>
-            {% for item in table_header_list %}
-                <th>{{ item }}</th>
-            {% endfor %}
-            </thead>
-            <tbody>
-            {% for row in table_body_list %}
-                <tr>
-                    {% for field in row %}
-                        <td>
-                            {{ field }}
-                        </td>
-                    {% endfor %}
+        <form method="post">
+            {% csrf_token %}
+            {% if multi_list %}
+                <div style="float: left; margin: 5px 10px 0">
+                    <div class="form-inline">
+                        <select class="form-control" name="action">
+                            <option>请选择操作</option>
+                            {% for action_name, action_text in multi_dict.items %}
+                                <option value="{{ action_name }}">{{ action_text }}</option>
+                            {% endfor %}
+                        </select>
+                        <input class="btn btn-primary" type="submit" value="执行">
+                    </div>
+                </div>
+            {% endif %}
+            {% if add_btn %}
+                <div style="margin: 5px 0; float: left">
+                    {{ add_btn|safe }}
+                </div>
+            {% endif %}
+            <table class="table table-bordered">
+                <thead>
+                {% for item in table_header_list %}
+                    <th>{{ item }}</th>
+                {% endfor %}
+                </thead>
+                <tbody>
+                {% for row in table_body_list %}
+                    <tr>
+                        {% for field in row %}
+                            <td>
+                                {{ field }}
+                            </td>
+                        {% endfor %}
 
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </form>
         <nav>
             <ul class="pagination">
                 {{ pager.page_html|safe }}

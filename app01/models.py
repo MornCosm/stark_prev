@@ -32,4 +32,15 @@ class UserInfo(models.Model):
         verbose_name="邮箱",
         max_length=128
     )
+    gender = models.BooleanField(
+        verbose_name="性别",
+        default=1,
+        choices=(
+            (0, '女'),
+            (1, '男')
+        )
+    )
     department = models.ForeignKey(verbose_name="部门名称", to=Department, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
